@@ -1,5 +1,3 @@
-import type { TestId } from '../core/tests';
-
 /** What a finished game reports back to the TestPage. */
 export interface GameResult {
   /** Final score of the run (direction depends on the test). */
@@ -22,5 +20,3 @@ export interface GameProps {
 }
 
 export type GameComponent = (props: GameProps) => JSX.Element;
-
-export type GameId = TestId;

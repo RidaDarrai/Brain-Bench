@@ -28,11 +28,10 @@ export default function SequenceMemoryGame({ onComplete }: GameProps) {
       <div className="seq-grid" role="grid" aria-label="Sequence grid">
         {Array.from({ length: 9 }, (_, tile) => {
           const lit = tile === activeTile;
-          const pressed = obs.phase === 'input' && lit;
           return (
             <button
               key={tile}
-              className={`seq-tile${lit ? ' lit' : ''}${pressed ? ' pressed' : ''}`}
+              className={`seq-tile${lit ? ' lit' : ''}`}
               onClick={() => press(tile)}
               disabled={obs.phase !== 'input'}
               aria-label={`Tile ${tile + 1}`}

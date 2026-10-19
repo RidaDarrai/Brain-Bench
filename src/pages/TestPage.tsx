@@ -7,7 +7,7 @@ import NumberMemoryGame from '../games/NumberMemoryGame';
 import ReactionTimeGame from '../games/ReactionTimeGame';
 import SequenceMemoryGame from '../games/SequenceMemoryGame';
 import VisualMemoryGame from '../games/VisualMemoryGame';
-import type { GameProps, GameResult } from '../games/types';
+import type { GameComponent, GameResult } from '../games/types';
 import { loadProgress, recordRun, type RunOutcome } from '../storage/progress';
 
 type Status = 'intro' | 'playing' | 'results';
@@ -35,11 +35,11 @@ export default function TestPage() {
     if (meta) {
       setStartLevel(saved?.highestUnlockedLevel ?? meta.defaultStartLevel);
     }
-    // Only when arriving at a test page.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Intentionally keyed on the test id only: re-entering a test resets the
+    // default start level, but changing it later shouldn't override the picker.
   }, [meta?.id]);
 
-  const Game: ((props: GameProps) => JSX.Element) | null = useMemo(() => {
+  const Game: GameComponent | null = useMemo(() => {
     if (!meta) return null;
     switch (meta.id) {
       case 'reaction-time':
@@ -181,8 +181,12 @@ export default function TestPage() {
 
   // ---------- RESULTS ----------
   const newLevelUnlocked = result && result.newlyUnlocked.length > 0;
+  // "Next level" resumes at the first level NOT yet passed: for memory games
+  // that's the level the player just failed (score = levels passed); for Aim
+  // Trainer (score in ms) it's simply the level after the one just passed.
+  const nextLevel = meta.lowerIsBetter ? attempt.level + 1 : (result?.score ?? 0) + 1;
   const canGoNext =
-    meta.hasLevels && result && result.unlockedLevel > attempt.level && attempt.level < maxLevel;
+    meta.hasLevels && result && startLevelPassed && nextLevel <= maxLevel;
 
   return (
     <div className="test-results">
@@ -199,7 +203,13 @@ export default function TestPage() {
 
         {!meta.lowerIsBetter && result && result.score > 0 && (
           <p className="muted">
-            You passed {result.score} {result.score === 1 ? 'level' : 'levels'}
+            {meta.hasLevels ? (
+              <>
+                You passed {result.score} {result.score === 1 ? 'level' : 'levels'}
+              </>
+            ) : (
+              <>You reached level {result.score}</>
+            )}
           </p>
         )}
 
@@ -221,12 +231,12 @@ export default function TestPage() {
             Retry
           </button>
           {canGoNext && (
-            <button className="btn" onClick={() => begin(attempt.level + 1)}>
+            <button className="btn" onClick={() => begin(nextLevel)}>
               Next level →
             </button>
           )}
           <button className="btn" onClick={() => setStatus('intro')}>
-            Change level
+            {meta.hasLevels ? 'Change level' : 'Back to info'}
           </button>
           <Link className="btn" to="/">
             All tests
