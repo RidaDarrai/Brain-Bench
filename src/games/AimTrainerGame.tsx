@@ -1,0 +1,116 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AimTrainerEnv, type AimTrainerObservation } from '../core/aimTrainer';
+import { formatScore, TESTS } from '../core/tests';
+import GameOverlay from './GameOverlay';
+import { useEnv } from './useEnv';
+import type { GameProps } from './types';
+
+const META = TESTS['aim-trainer'];
+const SPACE = 1000;
+
+/** Map pointer position inside the surface to the env's 1000x1000 space. */
+function toVirtual(e: React.MouseEvent<HTMLDivElement>, rect: DOMRect) {
+  const x = ((e.clientX - rect.left) / rect.width) * SPACE;
+  const y = ((e.clientY - rect.top) / rect.height) * SPACE;
+  return { x, y };
+}
+
+function Hud({ obs }: { obs: AimTrainerObservation }) {
+  const pct =
+    obs.timeLimit !== null ? Math.max(0, 1 - obs.elapsed / obs.timeLimit) : null;
+  return (
+    <div className="game-status">
+      <span className="muted">
+        {obs.hitCount} / {obs.totalTargets}
+      </span>
+      <span className="muted"> · {Math.round(obs.elapsed)} ms</span>
+      {obs.timeLimit !== null && (
+        <span className={pct !== null && pct < 0.25 ? 'aim-danger' : ''}>
+          {' '}
+          · limit {Math.round(obs.timeLimit / 1000)}s
+        </span>
+      )}
+    </div>
+  );
+}
+
+export default function AimTrainerGame({ startLevel, onComplete }: GameProps) {
+  const { obs, act } = useEnv(() => new AimTrainerEnv(startLevel));
+  const surfaceRef = useRef<HTMLDivElement>(null);
+  const reported = useRef(false);
+
+  const cleared = obs.completed === true ? [startLevel] : [];
+  const validForBest = obs.completed === true;
+
+  const finish = useCallback(
+    (clearedLevels: number[], best: boolean) => {
+      if (reported.current) return;
+      reported.current = true;
+      onComplete({ score: obs.score ?? 0, cleared: clearedLevels, validForBest: best });
+    },
+    [obs.score, onComplete],
+  );
+
+  const shoot = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = surfaceRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const { x, y } = toVirtual(e, rect);
+    act({ type: 'shoot', x, y });
+  };
+
+  // Auto-open the overlay once the run ends.
+  const [overlay, setOverlay] = useState(false);
+  useEffect(() => {
+    if (obs.phase === 'done') {
+      const t = setTimeout(() => setOverlay(true), 400);
+      return () => clearTimeout(t);
+    }
+    setOverlay(false);
+    return undefined;
+  }, [obs.phase]);
+
+  return (
+    <div className="game game-aim">
+      <Hud obs={obs} />
+      <div
+        ref={surfaceRef}
+        className="aim-surface"
+        onClick={shoot}
+        role="application"
+        aria-label="Aim trainer surface"
+      >
+        {obs.target && (
+          <div
+            className="aim-target"
+            style={{
+              // Coordinates are mapped linearly onto the surface in both axes,
+              // so sizes are percentages of the surface to match hit-testing.
+              left: `${(obs.target.x / SPACE) * 100}%`,
+              top: `${(obs.target.y / SPACE) * 100}%`,
+              width: `${(obs.radius / SPACE) * 200}%`,
+              height: `${(obs.radius / SPACE) * 200}%`,
+            }}
+          />
+        )}
+        <div className="aim-hud-corner">Level {obs.level}</div>
+      </div>
+
+      {overlay && (
+        <GameOverlay
+          accent={obs.completed === true ? 'good' : 'bad'}
+          title={obs.completed === true ? 'Level complete' : "Time's up"}
+          message={
+            <>
+              Average per target: <strong>{formatScore(META, obs.score ?? 0)}</strong>
+              <br />
+              {obs.completed === true
+                ? `You cleared all ${obs.totalTargets} targets.`
+                : `You hit ${obs.hitCount} of ${obs.totalTargets} targets.`}
+            </>
+          }
+          onContinue={() => finish(cleared, validForBest)}
+        />
+      )}
+    </div>
+  );
+}

@@ -104,16 +104,23 @@ export function validateProgress(data: unknown): Progress {
  *
  * @param score    the run's score (direction depends on the test)
  * @param cleared  levels actually passed during this run (empty for non-leveled tests)
+ * @param options  updateBest: set false to skip the personal-best update
  * Returns the updated progress plus what changed (for the results screen).
  */
-export function recordRun(testId: TestId, score: number, cleared: number[] = []): RunOutcome {
+export function recordRun(
+  testId: TestId,
+  score: number,
+  cleared: number[] = [],
+  options: { updateBest?: boolean } = {},
+): RunOutcome {
   const meta = TESTS[testId];
   const progress = loadProgress();
   const entry = progress.tests[testId] ?? emptyTestProgress(meta);
 
   const prevBest = entry.bestScore;
-  const newBest =
+  const improved =
     prevBest === null || (meta.lowerIsBetter ? score < prevBest : score > prevBest);
+  const newBest = options.updateBest !== false && improved;
 
   const newlyUnlocked: number[] = [];
   if (meta.hasLevels) {
