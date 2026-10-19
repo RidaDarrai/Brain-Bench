@@ -37,7 +37,22 @@ function Hud({ obs }: { obs: AimTrainerObservation }) {
 export default function AimTrainerGame({ startLevel, onComplete }: GameProps) {
   const { obs, act } = useEnv(() => new AimTrainerEnv(startLevel));
   const surfaceRef = useRef<HTMLDivElement>(null);
+  const fieldRef = useRef<HTMLDivElement>(null);
   const reported = useRef(false);
+
+  // Keep the play field a perfect square (min of surface width/height) so
+  // the env's square 1000x1000 space maps 1:1 and targets stay true circles.
+  const [fieldSize, setFieldSize] = useState(0);
+  useEffect(() => {
+    const surface = surfaceRef.current;
+    if (!surface) return undefined;
+    const ro = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect;
+      if (rect) setFieldSize(Math.floor(Math.min(rect.width, rect.height)));
+    });
+    ro.observe(surface);
+    return () => ro.disconnect();
+  }, []);
 
   const cleared = obs.completed === true ? [startLevel] : [];
   const validForBest = obs.completed === true;
@@ -52,7 +67,7 @@ export default function AimTrainerGame({ startLevel, onComplete }: GameProps) {
   );
 
   const shoot = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = surfaceRef.current?.getBoundingClientRect();
+    const rect = fieldRef.current?.getBoundingClientRect();
     if (!rect) return;
     const { x, y } = toVirtual(e, rect);
     act({ type: 'shoot', x, y });
@@ -72,26 +87,32 @@ export default function AimTrainerGame({ startLevel, onComplete }: GameProps) {
   return (
     <div className="game game-aim">
       <Hud obs={obs} />
-      <div
-        ref={surfaceRef}
-        className="aim-surface"
-        onClick={shoot}
-        role="application"
-        aria-label="Aim trainer surface"
-      >
-        {obs.target && (
-          <div
-            className="aim-target"
-            style={{
-              // Coordinates are mapped linearly onto the surface in both axes,
-              // so sizes are percentages of the surface to match hit-testing.
-              left: `${(obs.target.x / SPACE) * 100}%`,
-              top: `${(obs.target.y / SPACE) * 100}%`,
-              width: `${(obs.radius / SPACE) * 200}%`,
-              height: `${(obs.radius / SPACE) * 200}%`,
-            }}
-          />
-        )}
+      <div className="aim-surface" ref={surfaceRef}>
+        {/*
+          The env works in a square 1000x1000 space; the field is a centered
+          square (ResizeObserver) so targets stay perfect circles and pixel
+          mapping is isotropic (matches hit-testing exactly).
+        */}
+        <div
+          ref={fieldRef}
+          className="aim-field"
+          style={fieldSize > 0 ? { width: fieldSize, height: fieldSize } : undefined}
+          onClick={shoot}
+          role="application"
+          aria-label="Aim trainer surface"
+        >
+          {obs.target && (
+            <div
+              className="aim-target"
+              style={{
+                left: `${(obs.target.x / SPACE) * 100}%`,
+                top: `${(obs.target.y / SPACE) * 100}%`,
+                width: `${(obs.radius / SPACE) * 200}%`,
+                height: `${(obs.radius / SPACE) * 200}%`,
+              }}
+            />
+          )}
+        </div>
         <div className="aim-hud-corner">Level {obs.level}</div>
       </div>
 

@@ -810,8 +810,19 @@ h3 {
     radial-gradient(circle at center, rgba(79, 140, 255, 0.06), transparent 70%),
     #10161f;
   border: 1px solid var(--border);
-  cursor: crosshair;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Square play field (size set inline by ResizeObserver): the env's
+   1000x1000 space maps onto this box, so targets render as true circles
+   and clicks match hit-testing exactly. */
+.aim-field {
+  position: relative;
+  cursor: crosshair;
+  flex: 0 0 auto;
 }
 
 .aim-target {
