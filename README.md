@@ -17,6 +17,15 @@ A browser-based suite of cognitive tests inspired by Human Benchmark — but loc
 | Chimp Test | ✅ | Eidetic number recall under time pressure |
 | Aim Trainer | ✅ | Visuomotor speed & precision (Fitts's Law) |
 
+## Design
+
+Cyberpunk "neon terminal" UI built with **Tailwind CSS v4 + shadcn/ui** (Radix), in two themes:
+
+- **Dark (default)** — deep-black surfaces, neon cyan brand, per-test accent colors (reaction lime, sequence amber, number cyan, visual violet, chimp green, aim magenta), faint scanlines and a rare glitch-headline effect.
+- **Light** — an "inverted phosphor" palette: paper background with darkened neon text variants (all ≥ 4.5:1).
+
+Game play-fields stay instrument-dark in both themes. Fonts: Space Grotesk (UI) + JetBrains Mono (scores/HUD). All motion respects `prefers-reduced-motion`, focus-visible rings are keyboard-visible, and Lighthouse accessibility scores 100.
+
 ## Development
 
 ```bash
@@ -33,5 +42,7 @@ src/
 ├── games/       # React components that render an env & map input to actions
 ├── pages/       # Home, Test, Progress pages
 ├── storage/     # localStorage progress + JSON export/import
-└── components/  # Shared UI
+├── lib/         # Web-layer presentation maps (icons, per-test accents)
+├── components/  # Shared UI + shadcn/ui primitives (src/components/ui)
+└── index.css    # Design tokens (dark/light) + Tailwind entry
 ```
