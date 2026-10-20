@@ -8,6 +8,7 @@ import {
   loadProgress,
   type Progress,
 } from '../storage/progress';
+import TestIcon from '../components/TestIcon';
 
 export default function ProgressPage() {
   const [progress, setProgress] = useState<Progress>(() => loadProgress());
@@ -93,7 +94,7 @@ export default function ProgressPage() {
               return (
                 <tr key={id}>
                   <td>
-                    <span aria-hidden="true">{meta.icon}</span> {meta.name}
+                    <TestIcon id={id} className="inline-block size-4 align-middle" /> {meta.name}
                   </td>
                   <td>{formatScore(meta, saved?.bestScore ?? null)}</td>
                   <td>

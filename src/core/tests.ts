@@ -11,6 +11,7 @@ export type TestId =
 export interface TestMeta {
   id: TestId;
   name: string;
+  /** Lucide icon name (presentation mapped in src/lib/test-theme.ts). */
   icon: string;
   tagline: string;
   description: string;
@@ -29,7 +30,7 @@ export const TESTS: Record<TestId, TestMeta> = {
   'reaction-time': {
     id: 'reaction-time',
     name: 'Reaction Time',
-    icon: '⚡',
+    icon: 'zap',
     tagline: 'Test your visual reflexes.',
     description:
       'Click as soon as the screen turns green. 5 rounds — your score is the average time in milliseconds.',
@@ -47,7 +48,7 @@ export const TESTS: Record<TestId, TestMeta> = {
   'sequence-memory': {
     id: 'sequence-memory',
     name: 'Sequence Memory',
-    icon: '🧩',
+    icon: 'puzzle',
     tagline: 'Repeat an increasingly long pattern.',
     description:
       'Watch the tiles light up, then press them back in the same order. Each round adds one more step. One mistake ends the run.',
@@ -65,7 +66,7 @@ export const TESTS: Record<TestId, TestMeta> = {
   'number-memory': {
     id: 'number-memory',
     name: 'Number Memory',
-    icon: '🔢',
+    icon: 'hash',
     tagline: 'How many digits can you hold?',
     description:
       'A number appears for a few seconds — type it back from memory. Pass a level to unlock the next one. Level N has N digits.',
@@ -83,7 +84,7 @@ export const TESTS: Record<TestId, TestMeta> = {
   'visual-memory': {
     id: 'visual-memory',
     name: 'Visual Memory',
-    icon: '👁',
+    icon: 'eye',
     tagline: 'Remember a pattern of squares.',
     description:
       'Squares light up on a grid — memorize which ones, then select them. The grid and the number of squares grow with each level.',
@@ -101,7 +102,7 @@ export const TESTS: Record<TestId, TestMeta> = {
   'chimp-test': {
     id: 'chimp-test',
     name: 'Chimp Test',
-    icon: '🐒',
+    icon: 'brain',
     tagline: 'Are you smarter than a chimpanzee?',
     description:
       'Numbers 1 to N appear on a grid. Click 1 and they all hide — then click the rest in order from memory. Beat a level to unlock a bigger one.',
@@ -119,7 +120,7 @@ export const TESTS: Record<TestId, TestMeta> = {
   'aim-trainer': {
     id: 'aim-trainer',
     name: 'Aim Trainer',
-    icon: '🎯',
+    icon: 'target',
     tagline: 'How fast can you hit all the targets?',
     description:
       'Click the targets as quickly as you can. Levels add targets, shrink them, and eventually add a time limit.',

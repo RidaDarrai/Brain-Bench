@@ -8,6 +8,7 @@ import ReactionTimeGame from '../games/ReactionTimeGame';
 import SequenceMemoryGame from '../games/SequenceMemoryGame';
 import VisualMemoryGame from '../games/VisualMemoryGame';
 import type { GameComponent, GameResult } from '../games/types';
+import TestIcon from '../components/TestIcon';
 import { loadProgress, recordRun, type RunOutcome } from '../storage/progress';
 
 type Status = 'intro' | 'playing' | 'results';
@@ -107,7 +108,7 @@ export default function TestPage() {
         </Link>
         <div className="test-intro-head">
           <span className="test-intro-icon" aria-hidden="true">
-            {meta.icon}
+            <TestIcon id={meta.id} />
           </span>
           <div>
             <h1>{meta.name}</h1>
@@ -166,7 +167,8 @@ export default function TestPage() {
             ← Exit
           </Link>
           <span className="playing-title">
-            {meta.icon} {meta.name}
+            <TestIcon id={meta.id} className="mr-1.5 inline-block size-4 align-middle" />{' '}
+            {meta.name}
             {meta.hasLevels && <> · Level {startLevel}</>}
           </span>
         </div>
@@ -192,7 +194,7 @@ export default function TestPage() {
     <div className="test-results">
       <div className="results-card">
         <span className="results-icon" aria-hidden="true">
-          {meta.icon}
+          <TestIcon id={meta.id} />
         </span>
         <h1>{meta.name}</h1>
 
