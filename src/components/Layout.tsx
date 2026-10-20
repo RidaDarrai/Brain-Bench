@@ -14,9 +14,9 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
 
 export default function Layout() {
   return (
-    <div className="scanlines flex min-h-dvh flex-col bg-background text-foreground">
+    <div className="scanlines flex min-h-dvh flex-col overflow-x-clip bg-background text-foreground">
       <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-3">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3">
           <NavLink
             to="/"
             className="group flex items-center gap-2.5 rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
@@ -43,12 +43,12 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8">
         <Outlet />
       </main>
 
       <footer className="border-t border-border px-5 py-5">
-        <p className="mx-auto max-w-5xl text-center text-xs text-muted-foreground">
+        <p className="mx-auto max-w-6xl text-center text-xs text-muted-foreground">
           Brain Bench — local-only cognitive tests. No accounts, no leaderboards — your progress
           stays in this browser.
         </p>

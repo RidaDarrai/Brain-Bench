@@ -120,12 +120,12 @@ export default function TestPage() {
           </Link>
         </Button>
         <div className="flex items-start gap-4">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-[var(--test-accent)]/30 bg-[var(--test-accent)]/10 text-[var(--test-accent)]">
-            <TestIcon id={meta.id} className="size-6" />
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-xl border border-[var(--test-accent)]/30 bg-[var(--test-accent)]/10 text-[var(--test-accent)]">
+            <TestIcon id={meta.id} className="size-7" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{meta.name}</h1>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{meta.description}</p>
+            <h1 className="text-3xl font-bold tracking-tight">{meta.name}</h1>
+            <p className="mt-1 text-base leading-relaxed text-muted-foreground">{meta.description}</p>
           </div>
         </div>
 
@@ -148,7 +148,7 @@ export default function TestPage() {
 
         <ol className="mt-6 list-none space-y-2.5 p-0">
           {meta.instructions.map((line, i) => (
-            <li key={i} className="flex gap-3 text-sm text-muted-foreground">
+            <li key={i} className="flex gap-3 text-base text-muted-foreground">
               <span className="mt-px font-mono text-xs text-[var(--brand)]">
                 {String(i + 1).padStart(2, '0')}
               </span>
@@ -234,7 +234,7 @@ export default function TestPage() {
         <span className="mx-auto flex size-12 items-center justify-center rounded-xl border border-[var(--test-accent)]/30 bg-[var(--test-accent)]/10 text-[var(--test-accent)]">
           <TestIcon id={meta.id} className="size-6" />
         </span>
-        <h1 className="mt-4 mb-0 text-2xl font-bold tracking-tight">{meta.name}</h1>
+        <h1 className="mt-4 mb-0 text-3xl font-bold tracking-tight">{meta.name}</h1>
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           <span className="hud-num glow-text text-4xl font-bold sm:text-5xl">
