@@ -1,8 +1,9 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import ThemeToggle from './ThemeToggle';
 
 export default function Layout() {
   return (
-    <div className="layout">
+    <div className="layout scanlines">
       <header className="site-header">
         <NavLink to="/" className="brand">
           <span className="brand-mark">🧠</span> Brain Bench
@@ -12,6 +13,7 @@ export default function Layout() {
             Tests
           </NavLink>
           <NavLink to="/progress">Progress</NavLink>
+          <ThemeToggle />
         </nav>
       </header>
       <main className="site-main">
