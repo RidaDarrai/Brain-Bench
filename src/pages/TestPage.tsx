@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, LockOpen, Play, RotateCcw, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { formatScore, isTestId, TESTS } from '../core/tests';
+import { testAccentStyle } from '../lib/test-theme';
 import AimTrainerGame from '../games/AimTrainerGame';
 import ChimpTestGame from '../games/ChimpTestGame';
 import NumberMemoryGame from '../games/NumberMemoryGame';
@@ -9,6 +12,7 @@ import SequenceMemoryGame from '../games/SequenceMemoryGame';
 import VisualMemoryGame from '../games/VisualMemoryGame';
 import type { GameComponent, GameResult } from '../games/types';
 import TestIcon from '../components/TestIcon';
+import CountUp from '../components/CountUp';
 import { loadProgress, recordRun, type RunOutcome } from '../storage/progress';
 
 type Status = 'intro' | 'playing' | 'results';
@@ -151,9 +155,9 @@ export default function TestPage() {
           </div>
         )}
 
-        <button className="btn btn-primary btn-lg" onClick={() => begin(startLevel)}>
-          Start test
-        </button>
+        <Button size="lg" onClick={() => begin(startLevel)}>
+          <Play className="size-4" /> Start test
+        </Button>
       </div>
     );
   }
@@ -162,12 +166,17 @@ export default function TestPage() {
   if (status === 'playing') {
     return (
       <div className="test-playing">
-        <div className="playing-bar">
-          <Link to="/" className="back-link">
-            ← Exit
-          </Link>
-          <span className="playing-title">
-            <TestIcon id={meta.id} className="mr-1.5 inline-block size-4 align-middle" />{' '}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
+            <Link to="/">
+              <ArrowLeft className="size-4" /> Exit
+            </Link>
+          </Button>
+          <span
+            style={testAccentStyle(meta.id)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 font-mono text-xs tracking-wide text-muted-foreground"
+          >
+            <TestIcon id={meta.id} className="size-3.5 text-[var(--test-accent)]" />
             {meta.name}
             {meta.hasLevels && <> · Level {startLevel}</>}
           </span>
@@ -191,20 +200,29 @@ export default function TestPage() {
     meta.hasLevels && result && startLevelPassed && nextLevel <= maxLevel;
 
   return (
-    <div className="test-results">
-      <div className="results-card">
-        <span className="results-icon" aria-hidden="true">
-          <TestIcon id={meta.id} />
+    <div style={testAccentStyle(meta.id)} className="mx-auto max-w-xl">
+      <div className="rounded-2xl border border-border bg-card p-8 text-center">
+        <span className="mx-auto flex size-12 items-center justify-center rounded-xl border border-[var(--test-accent)]/30 bg-[var(--test-accent)]/10 text-[var(--test-accent)]">
+          <TestIcon id={meta.id} className="size-6" />
         </span>
-        <h1>{meta.name}</h1>
+        <h1 className="mt-4 mb-0 text-2xl font-bold tracking-tight">{meta.name}</h1>
 
-        <div className="results-score">
-          <span className="results-score-value">{formatScore(meta, result?.score ?? 0)}</span>
-          {result?.newBest && <span className="badge badge-best">★ New best!</span>}
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <span className="hud-num glow-text text-4xl font-bold sm:text-5xl">
+            <CountUp value={result?.score ?? 0} format={(n) => formatScore(meta, n)} />
+          </span>
+          {result?.newBest && (
+            <span
+              className="glitch inline-flex items-center gap-1.5 rounded-full border border-[var(--success)]/40 bg-[var(--success)]/10 px-3 py-1 font-mono text-xs font-semibold tracking-wide uppercase text-[var(--success)]"
+              data-text="New best!"
+            >
+              <Sparkles className="size-3.5" aria-hidden="true" /> New best!
+            </span>
+          )}
         </div>
 
         {!meta.lowerIsBetter && result && result.score > 0 && (
-          <p className="muted">
+          <p className="mt-2 text-sm text-muted-foreground">
             {meta.hasLevels ? (
               <>
                 You passed {result.score} {result.score === 1 ? 'level' : 'levels'}
@@ -216,36 +234,45 @@ export default function TestPage() {
         )}
 
         {newLevelUnlocked && (
-          <p className="badge badge-unlock">
-            🔓 Level {result!.newlyUnlocked.join(' & ')} unlocked!
+          <p
+            style={testAccentStyle(meta.id)}
+            className="mt-3 inline-flex items-center gap-2 rounded-full border border-[var(--test-accent)]/30 bg-[var(--test-accent)]/[0.08] px-3 py-1 font-mono text-xs tracking-wide text-[var(--test-accent)]"
+          >
+            <LockOpen className="size-3.5" aria-hidden="true" />
+            Level {result!.newlyUnlocked.join(' & ')} unlocked!
           </p>
         )}
         {meta.hasLevels && !newLevelUnlocked && startLevelPassed && (
-          <p className="muted">Level {attempt.level} passed — keep climbing!</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Level {attempt.level} passed — keep climbing!
+          </p>
         )}
 
-        <div className="results-best muted">
-          Personal best: <strong>{formatScore(meta, saved?.bestScore ?? null)}</strong>
+        <div className="mt-4 font-mono text-xs tracking-wide text-muted-foreground">
+          Personal best:{' '}
+          <strong className="font-medium text-foreground">
+            {formatScore(meta, saved?.bestScore ?? null)}
+          </strong>
         </div>
 
-        <div className="results-actions">
-          <button className="btn btn-primary" onClick={() => begin(attempt.level)}>
-            Retry
-          </button>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+          <Button onClick={() => begin(attempt.level)}>
+            <RotateCcw className="size-4" /> Retry
+          </Button>
           {canGoNext && (
-            <button className="btn" onClick={() => begin(nextLevel)}>
-              Next level →
-            </button>
+            <Button variant="outline" onClick={() => begin(nextLevel)}>
+              Next level <ArrowRight className="size-4" />
+            </Button>
           )}
-          <button className="btn" onClick={() => setStatus('intro')}>
+          <Button variant="outline" onClick={() => setStatus('intro')}>
             {meta.hasLevels ? 'Change level' : 'Back to info'}
-          </button>
-          <Link className="btn" to="/">
-            All tests
-          </Link>
-          <Link className="btn" to="/progress">
-            Progress
-          </Link>
+          </Button>
+          <Button variant="ghost" asChild>
+            <Link to="/">All tests</Link>
+          </Button>
+          <Button variant="ghost" asChild>
+            <Link to="/progress">Progress</Link>
+          </Button>
         </div>
       </div>
     </div>

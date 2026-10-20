@@ -99,7 +99,7 @@ h3 {
 .btn-primary {
   background: var(--brand);
   border-color: var(--brand-strong);
-  color: #fff;
+  color: var(--primary-foreground);
 }
 
 .btn-primary:hover {
@@ -114,11 +114,6 @@ h3 {
 
 .btn-danger:hover {
   background: rgba(248, 81, 73, 0.12);
-}
-
-.btn-lg {
-  font-size: 1.05rem;
-  padding: 13px 30px;
 }
 
 .btn-sm {
@@ -145,27 +140,6 @@ h3 {
 
 .pill-levels {
   border-color: rgba(79, 140, 255, 0.45);
-}
-
-.badge {
-  display: inline-block;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  margin: 4px 0;
-}
-
-.badge-best {
-  background: rgba(210, 153, 34, 0.15);
-  color: #f0c547;
-  border: 1px solid rgba(210, 153, 34, 0.5);
-}
-
-.badge-unlock {
-  background: rgba(63, 185, 80, 0.12);
-  color: var(--green-bright);
-  border: 1px solid rgba(63, 185, 80, 0.5);
 }
 
 .banner {
@@ -268,22 +242,6 @@ h3 {
   gap: 14px;
 }
 
-.playing-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.playing-bar .back-link {
-  margin-bottom: 0;
-}
-
-.playing-title {
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
 .game {
   position: relative;
   background: var(--bg-raised);
@@ -329,37 +287,6 @@ h3 {
   z-index: 10;
   padding: 20px;
   animation: fade-in 0.2s ease-out;
-}
-
-.game-overlay-card {
-  background: var(--bg-raised);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius);
-  padding: 28px 34px;
-  text-align: center;
-  max-width: 440px;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
-}
-
-.game-overlay-card h2 {
-  margin-bottom: 10px;
-}
-
-.accent-good .game-overlay-card h2 {
-  color: var(--green-bright);
-}
-
-.accent-bad .game-overlay-card h2 {
-  color: var(--red-bright);
-}
-
-.game-overlay-message {
-  color: var(--text-muted);
-  margin-bottom: 20px;
-}
-
-.game-overlay-message strong {
-  color: var(--text);
 }
 
 @keyframes fade-in {
@@ -698,52 +625,6 @@ h3 {
 
 .aim-danger {
   color: var(--red-bright);
-}
-
-/* ---------- Results ---------- */
-.test-results {
-  display: flex;
-  justify-content: center;
-}
-
-.results-card {
-  background: var(--bg-raised);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius);
-  padding: 34px 38px;
-  text-align: center;
-  max-width: 520px;
-  width: 100%;
-}
-
-.results-icon {
-  font-size: 2.6rem;
-}
-
-.results-score {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  margin: 10px 0 6px;
-}
-
-.results-score-value {
-  font-size: clamp(2.4rem, 8vw, 3.6rem);
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-
-.results-best {
-  margin: 14px 0 22px;
-  font-size: 0.92rem;
-}
-
-.results-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
 }
 
 /* ---------- Progress page ---------- */

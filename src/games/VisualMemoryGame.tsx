@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { VisualMemoryEnv } from '../core/visualMemory';
 import GameOverlay from './GameOverlay';
 import { levelsBetween, useEnv } from './useEnv';
+import { Button } from '@/components/ui/button';
 import type { GameProps } from './types';
 
 export default function VisualMemoryGame({ startLevel, onComplete }: GameProps) {
@@ -76,18 +77,18 @@ export default function VisualMemoryGame({ startLevel, onComplete }: GameProps) 
           <span className="muted">
             {obs.selected.length} / {obs.tiles.length} selected
           </span>
-          <button className="btn btn-primary" onClick={submit} disabled={obs.selected.length === 0}>
+          <Button onClick={submit} disabled={obs.selected.length === 0}>
             Submit
-          </button>
+          </Button>
         </div>
       )}
 
       {obs.phase === 'feedback' && (
         <div className="game-actions">
           <span className="correct-text">✓ Correct!</span>
-          <button className="btn btn-primary" onClick={() => act({ type: 'continue' })} autoFocus>
+          <Button onClick={() => act({ type: 'continue' })} autoFocus>
             Next level
-          </button>
+          </Button>
         </div>
       )}
 

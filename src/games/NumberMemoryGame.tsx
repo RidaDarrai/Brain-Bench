@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { NumberMemoryEnv } from '../core/numberMemory';
 import GameOverlay from './GameOverlay';
 import { levelsBetween, useEnv } from './useEnv';
+import { Button } from '@/components/ui/button';
 import type { GameProps } from './types';
 
 export default function NumberMemoryGame({ startLevel, onComplete }: GameProps) {
@@ -71,9 +72,7 @@ export default function NumberMemoryGame({ startLevel, onComplete }: GameProps) 
           />
           <div className="num-actions">
             {typed.length > 0 && (
-              <button className="btn btn-primary" onClick={submit}>
-                Submit
-              </button>
+              <Button onClick={submit}>Submit</Button>
             )}
             <span className="muted">Press Enter to submit</span>
           </div>
@@ -84,9 +83,9 @@ export default function NumberMemoryGame({ startLevel, onComplete }: GameProps) 
         <div className="num-show">
           <div className="num-value num-correct">✓ {obs.number}</div>
           <p className="muted">Correct! Get ready for level {obs.level + 1}…</p>
-          <button className="btn btn-primary" onClick={() => act({ type: 'continue' })} autoFocus>
+          <Button onClick={() => act({ type: 'continue' })} autoFocus>
             Next level
-          </button>
+          </Button>
         </div>
       )}
 

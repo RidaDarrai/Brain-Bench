@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { ChimpTestEnv } from '../core/chimpTest';
 import GameOverlay from './GameOverlay';
 import { levelsBetween, useEnv } from './useEnv';
+import { Button } from '@/components/ui/button';
 import type { GameProps } from './types';
 
 const MIN_CHIMP_LEVEL = 4;
@@ -69,9 +70,9 @@ export default function ChimpTestGame({ startLevel, onComplete }: GameProps) {
           <span className="correct-text">
             ✓ You beat {obs.level} {obs.level === 1 ? 'number' : 'numbers'}!
           </span>
-          <button className="btn btn-primary" onClick={() => act({ type: 'continue' })} autoFocus>
+          <Button onClick={() => act({ type: 'continue' })} autoFocus>
             Next level
-          </button>
+          </Button>
         </div>
       )}
 
