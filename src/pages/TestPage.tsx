@@ -2,6 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, LockOpen, Play, RotateCcw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { formatScore, isTestId, TESTS } from '../core/tests';
 import { testAccentStyle } from '../lib/test-theme';
 import AimTrainerGame from '../games/AimTrainerGame';
@@ -106,56 +113,78 @@ export default function TestPage() {
       : [];
 
     return (
-      <div className="test-intro">
-        <Link to="/" className="back-link">
-          ← All tests
-        </Link>
-        <div className="test-intro-head">
-          <span className="test-intro-icon" aria-hidden="true">
-            <TestIcon id={meta.id} />
+      <div className="mx-auto max-w-2xl" style={testAccentStyle(meta.id)}>
+        <Button asChild variant="ghost" size="sm" className="-ml-3 mb-4 text-muted-foreground">
+          <Link to="/">
+            <ArrowLeft className="size-4" /> All tests
+          </Link>
+        </Button>
+        <div className="flex items-start gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-[var(--test-accent)]/30 bg-[var(--test-accent)]/10 text-[var(--test-accent)]">
+            <TestIcon id={meta.id} className="size-6" />
           </span>
           <div>
-            <h1>{meta.name}</h1>
-            <p className="lead">{meta.description}</p>
+            <h1 className="text-2xl font-bold tracking-tight">{meta.name}</h1>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{meta.description}</p>
           </div>
         </div>
 
-        <div className="test-intro-stats">
-          <span className="pill">
-            Best: <strong>{formatScore(meta, saved?.bestScore ?? null)}</strong>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 font-mono text-xs tracking-wide text-muted-foreground">
+            Best{' '}
+            <b className="font-medium text-foreground">
+              {formatScore(meta, saved?.bestScore ?? null)}
+            </b>
           </span>
           {meta.hasLevels && (
-            <span className="pill pill-levels">
-              Highest unlocked: <strong>Level {unlocked}</strong> / {meta.maxLevel}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--test-accent)]/25 bg-[var(--test-accent)]/[0.07] px-3 py-1 font-mono text-xs tracking-wide text-muted-foreground">
+              Highest unlocked{' '}
+              <b className="font-medium text-[var(--test-accent)]">
+                Lvl {unlocked}/{meta.maxLevel}
+              </b>
             </span>
           )}
         </div>
 
-        <ol className="instructions">
+        <ol className="mt-6 list-none space-y-2.5 p-0">
           {meta.instructions.map((line, i) => (
-            <li key={i}>{line}</li>
+            <li key={i} className="flex gap-3 text-sm text-muted-foreground">
+              <span className="mt-px font-mono text-xs text-[var(--brand)]">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              {line}
+            </li>
           ))}
         </ol>
 
         {meta.hasLevels && (
-          <div className="level-picker">
-            <label htmlFor="level-select">Start at level</label>
-            <select
-              id="level-select"
-              value={Math.min(Math.max(startLevel, meta.defaultStartLevel), unlocked)}
-              onChange={(e) => setStartLevel(Number(e.target.value))}
+          <div className="mt-6">
+            <label
+              htmlFor="level-select"
+              className="mb-2 block font-mono text-xs tracking-[0.18em] text-muted-foreground uppercase"
             >
-              {levelOptions.map((lvl) => (
-                <option key={lvl} value={lvl} disabled={lvl > unlocked}>
-                  Level {lvl}
-                  {lvl > unlocked ? ' (locked)' : ''}
-                </option>
-              ))}
-            </select>
+              Start at level
+            </label>
+            <Select
+              value={String(Math.min(Math.max(startLevel, meta.defaultStartLevel), unlocked))}
+              onValueChange={(v) => setStartLevel(Number(v))}
+            >
+              <SelectTrigger id="level-select" className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {levelOptions.map((lvl) => (
+                  <SelectItem key={lvl} value={String(lvl)} disabled={lvl > unlocked}>
+                    Level {lvl}
+                    {lvl > unlocked ? ' (locked)' : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 
-        <Button size="lg" onClick={() => begin(startLevel)}>
+        <Button size="lg" className="mt-6" onClick={() => begin(startLevel)}>
           <Play className="size-4" /> Start test
         </Button>
       </div>
