@@ -120,12 +120,24 @@ h3 {
 }
 
 /* ---------- Reaction time ---------- */
+/* Full-bleed: the card's walls land on the window's left/right borders. */
+.game-reaction-time {
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+}
+
 .rt-surface {
   flex: 1;
-  width: 100%;
-  min-height: 340px;
-  border-radius: var(--radius);
-  border: 1px solid var(--edge);
+  /* span the full card width: walls land on the card's borders */
+  width: calc(100% + 40px);
+  margin-inline: -20px;
+  min-height: max(420px, calc(100dvh - 318px));
+  border-radius: 0;
+  border-top: 1px solid var(--edge);
+  border-bottom: 1px solid var(--edge);
+  border-left: 0;
+  border-right: 0;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -511,6 +523,11 @@ h3 {
   .game {
     padding: 14px;
     min-height: 380px;
+  }
+
+  .rt-surface {
+    width: calc(100% + 28px);
+    margin-inline: -14px;
   }
 
   .seq-grid {
