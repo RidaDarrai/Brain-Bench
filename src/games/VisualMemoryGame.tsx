@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { VisualMemoryEnv } from '../core/visualMemory';
 import GameOverlay from './GameOverlay';
 import { levelsBetween, useEnv } from './useEnv';
@@ -8,6 +8,14 @@ import type { GameProps } from './types';
 export default function VisualMemoryGame({ startLevel, onComplete }: GameProps) {
   const { obs, act } = useEnv(() => new VisualMemoryEnv(startLevel));
   const reported = useRef(false);
+
+  // Cells picked wrongly this round: shake first, then stay red.
+  const [wrongCells, setWrongCells] = useState<Set<number>>(new Set());
+
+  // Fresh round → clear the red marks.
+  useEffect(() => {
+    if (obs.phase === 'show') setWrongCells(new Set());
+  }, [obs.phase]);
 
   const finish = useCallback(
     (cleared: number[]) => {
@@ -24,6 +32,23 @@ export default function VisualMemoryGame({ startLevel, onComplete }: GameProps) 
 
   const toggle = (cell: number) => act({ type: 'select', cell });
   const submit = () => act({ type: 'submit' });
+
+  // Toggle selection and remember wrong picks so they can zigzag → red.
+  const onCell = (cell: number) => {
+    if (obs.phase !== 'input') return;
+    const pickingWrong = !obs.tiles.includes(cell) && !obs.selected.includes(cell);
+    const clearingWrong = wrongCells.has(cell);
+    toggle(cell);
+    if (pickingWrong) {
+      setWrongCells((prev) => new Set(prev).add(cell));
+    } else if (clearingWrong) {
+      setWrongCells((prev) => {
+        const next = new Set(prev);
+        next.delete(cell);
+        return next;
+      });
+    }
+  };
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -49,13 +74,14 @@ export default function VisualMemoryGame({ startLevel, onComplete }: GameProps) 
           const lit = isShowing && obs.tiles.includes(cell);
           const selected = !isShowing && obs.selected.includes(cell);
           const revealed = obs.phase === 'done' && obs.tiles.includes(cell);
+          const wrong = wrongCells.has(cell);
           return (
             <button
               key={cell}
               className={`vis-cell${lit ? ' lit' : ''}${selected ? ' selected' : ''}${
-                revealed ? ' revealed' : ''
-              }`}
-              onClick={() => toggle(cell)}
+                selected && !wrong ? ' flip' : ''
+              }${wrong ? ' wrong' : ''}${revealed ? ' revealed' : ''}`}
+              onClick={() => onCell(cell)}
               disabled={obs.phase !== 'input'}
               aria-label={`Cell ${cell + 1}`}
             />
