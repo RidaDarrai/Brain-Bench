@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SequenceMemoryEnv } from '../core/sequenceMemory';
 import GameOverlay from './GameOverlay';
 import { useEnv } from './useEnv';
@@ -7,6 +7,28 @@ import type { GameProps } from './types';
 export default function SequenceMemoryGame({ onComplete }: GameProps) {
   const { obs, act } = useEnv(() => new SequenceMemoryEnv());
   const reported = useRef(false);
+
+  // Press feedback (Human Benchmark style): the tile lights the moment it is
+  // pressed and fades back after release.
+  const [pressed, setPressed] = useState(-1);
+  const flashTimer = useRef<number | undefined>(undefined);
+
+  // Never keep a press highlight outside the input phase (e.g. on game over).
+  useEffect(() => {
+    if (obs.phase !== 'input') setPressed(-1);
+  }, [obs.phase]);
+  useEffect(() => () => window.clearTimeout(flashTimer.current), []);
+
+  // Sequence completed → the box washes white for an instant.
+  const prevLevel = useRef(obs.level);
+  const [levelFlash, setLevelFlash] = useState(false);
+  useEffect(() => {
+    if (obs.level <= prevLevel.current) return;
+    prevLevel.current = obs.level;
+    setLevelFlash(true);
+    const t = window.setTimeout(() => setLevelFlash(false), 320);
+    return () => window.clearTimeout(t);
+  }, [obs.level]);
 
   const press = useCallback((tile: number) => act({ type: 'press', tile }), [act]);
   const finish = () => {
@@ -19,7 +41,7 @@ export default function SequenceMemoryGame({ onComplete }: GameProps) {
   const activeTile = isShowing && obs.showActive ? obs.sequence[obs.showIndex] : -1;
 
   return (
-    <div className="game game-sequence">
+    <div className={`game game-sequence${levelFlash ? ' level-flash' : ''}`}>
       <div className="game-status">
         {isShowing ? 'Watch carefully…' : obs.phase === 'input' ? 'Your turn' : ''}
         <span className="muted"> · Level {obs.level}</span>
@@ -28,11 +50,26 @@ export default function SequenceMemoryGame({ onComplete }: GameProps) {
       <div className="seq-grid" role="grid" aria-label="Sequence grid">
         {Array.from({ length: 9 }, (_, tile) => {
           const lit = tile === activeTile;
+          const pressedNow = tile === pressed;
           return (
             <button
               key={tile}
-              className={`seq-tile${lit ? ' lit' : ''}`}
-              onClick={() => press(tile)}
+              className={`seq-tile${lit ? ' lit' : ''}${pressedNow ? ' pressed' : ''}`}
+              onPointerDown={() => {
+                if (obs.phase === 'input') setPressed(tile);
+              }}
+              onPointerUp={() => setPressed((p) => (p === tile ? -1 : p))}
+              onPointerLeave={() => setPressed((p) => (p === tile ? -1 : p))}
+              onPointerCancel={() => setPressed((p) => (p === tile ? -1 : p))}
+              onClick={(e) => {
+                press(tile);
+                // Keyboard activation (Enter/Space) has no press/release — flash briefly.
+                if (e.detail === 0) {
+                  setPressed(tile);
+                  window.clearTimeout(flashTimer.current);
+                  flashTimer.current = window.setTimeout(() => setPressed(-1), 200);
+                }
+              }}
               disabled={obs.phase !== 'input'}
               aria-label={`Tile ${tile + 1}`}
             />

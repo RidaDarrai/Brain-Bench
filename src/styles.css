@@ -65,14 +65,21 @@ h3 {
 
 .game {
   position: relative;
+  /* full-bleed: walls land on the window's borders — same size as the
+     reaction-time box (its surface rule is unchanged and still fills this) */
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
   background: var(--bg-raised);
   border: 1px solid var(--edge);
   border-radius: var(--radius);
   padding: 20px;
-  min-height: 440px;
+  /* fill the viewport height like the reaction-time box (page chrome ≈ 240px) */
+  min-height: max(440px, calc(100dvh - 240px));
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 16px;
 }
 
@@ -94,6 +101,26 @@ h3 {
 .correct-text {
   color: var(--green-bright);
   font-weight: 700;
+}
+
+/* Level complete: the box washes white for an instant (Human Benchmark style). */
+@keyframes level-flash {
+  from {
+    opacity: 0.32;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.game.level-flash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #fff;
+  pointer-events: none;
+  animation: level-flash 0.3s ease-out forwards;
 }
 
 /* ---------- Game over overlay ---------- */
@@ -120,13 +147,7 @@ h3 {
 }
 
 /* ---------- Reaction time ---------- */
-/* Full-bleed: the card's walls land on the window's left/right borders. */
-.game-reaction-time {
-  left: 50%;
-  width: 100vw;
-  transform: translateX(-50%);
-}
-
+/* (The card itself is full-bleed via the shared .game rules.) */
 .rt-surface {
   flex: 1;
   touch-action: manipulation; /* no double-tap zoom delay on touch */
@@ -146,7 +167,7 @@ h3 {
   justify-content: center;
   gap: 14px;
   color: #fff;
-  font-size: 1.5rem;
+  font-size: 2.5rem;
   font-weight: 700;
   transition: background 0.08s;
   user-select: none;
@@ -161,7 +182,9 @@ h3 {
 }
 
 .rt-green {
-  background: var(--green);
+  /* palette neon green — vivid, plus dark ink so large-text contrast holds */
+  background: var(--green-vivid);
+  color: #04160b;
 }
 
 .rt-early {
@@ -173,7 +196,7 @@ h3 {
 }
 
 .rt-clock {
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 600;
   opacity: 0.85;
   font-variant-numeric: tabular-nums;
@@ -193,9 +216,10 @@ h3 {
   border: 1px solid var(--edge);
   background: #232b38;
   cursor: pointer;
+  touch-action: manipulation;
   transition:
-    background 0.1s,
-    transform 0.06s;
+    background 0.25s ease,
+    transform 0.12s ease; /* fade-back after a press is released */
 }
 
 .seq-tile:disabled {
@@ -206,9 +230,24 @@ h3 {
   background: #f0c547;
   border-color: #f0c547;
   transform: scale(1.05);
+  transition:
+    background 0.1s,
+    transform 0.06s; /* playback flashes snap on/off as before */
 }
 
-.seq-tile:not(:disabled):hover {
+/* Input press: snaps on while held… */
+.seq-tile.pressed {
+  background: #f0c547;
+  border-color: #f0c547;
+  transform: scale(1.05);
+  transition:
+    background 0.05s,
+    transform 0.06s;
+}
+/* …and fades back via the base rule's 0.25s once released. */
+
+/* exclude pressed so a press flash always wins over hover */
+.seq-tile:not(:disabled):not(.pressed):hover {
   background: #2c3646;
 }
 

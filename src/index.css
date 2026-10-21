@@ -73,6 +73,8 @@
     --brand: #007a80;
     --success: #00782f;
     --success-surface: #00782f;
+    /* bright state green (reaction-time "green" screen) */
+    --green-vivid: #00b84a;
     --danger: #c20047;
     --danger-surface: #a8003e;
     --warn: #8a5a00;
@@ -112,6 +114,8 @@
     --brand: #00ffff;
     --success: #39ff6a;
     --success-surface: #0e7a2f;
+    /* bright state green (reaction-time "green" screen) */
+    --green-vivid: #00c853;
     --danger: #ff3b5c;
     --danger-surface: #c40e2f;
     --warn: #ffb020;
