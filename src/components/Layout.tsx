@@ -24,12 +24,7 @@ export default function Layout() {
             <span className="flex size-8 items-center justify-center rounded-md border border-[var(--brand)]/40 bg-[var(--brand)]/10 text-[var(--brand)] transition-shadow group-hover:shadow-[0_0_16px_var(--glow)]">
               <Terminal className="size-4" />
             </span>
-            <span className="text-[15px] font-semibold tracking-tight">
-              Brain Bench
-              <span className="ml-2 font-mono text-[10px] font-medium tracking-[0.18em] text-muted-foreground uppercase">
-                v1
-              </span>
-            </span>
+            <span className="text-[15px] font-semibold tracking-tight">Brain Bench</span>
           </NavLink>
           <nav aria-label="Primary" className="flex items-center gap-1">
             <NavLink to="/" end className={navLinkClass}>

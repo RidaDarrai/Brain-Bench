@@ -15,7 +15,7 @@ export default function HomePage() {
   return (
     <div className="space-y-12">
       {/* ---------- Hero (full-bleed, benchmark-scale) ---------- */}
-      <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden border-y border-border bg-card px-6 py-20 text-center sm:py-24">
+      <section className="relative -mt-8 left-1/2 w-screen -translate-x-1/2 overflow-hidden border-b border-border bg-card px-6 py-20 text-center sm:py-24">
         {/* faint instrument grid */}
         <div
           aria-hidden="true"
