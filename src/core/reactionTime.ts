@@ -21,6 +21,12 @@ export interface ReactionTimeObservation {
 
 export interface ReactionTimeAction {
   type: 'click';
+  /**
+   * performance.now() stamp of the input press. Measured at the event (not a
+   * frame boundary) so the result is the true reaction time — press-to-press
+   * comparable with Human Benchmark. Falls back to the env clock.
+   */
+  at?: number;
 }
 
 const TOTAL_ROUNDS = 5;
@@ -36,6 +42,8 @@ export class ReactionTimeEnv implements GameEnv<ReactionTimeObservation, Reactio
   private times: number[] = [];
   private lastTime: number | null = null;
   private elapsed = 0;
+  /** Wall-clock (performance.now) stamp of the green transition. */
+  private greenAt = 0;
 
   constructor(seed?: number) {
     this.rng = createRng(seed);
@@ -70,9 +78,15 @@ export class ReactionTimeEnv implements GameEnv<ReactionTimeObservation, Reactio
     }
     this.elapsed += dtMs;
     if (phase === 'waiting' && this.elapsed >= this.waitDuration) {
-      // Green! Reset the clock so the measured time starts now.
+      // Green! Stamp the wall clock so the measured time starts at the real
+      // transition (within one frame), not at the next frame boundary.
+      this.greenAt = performance.now();
       this.elapsed = 0;
       return { observation: (this.obs = this.publish('green')), reward: 0, done: false };
+    }
+    if (phase === 'green') {
+      // Live clock from the same stamps the result uses.
+      this.elapsed = performance.now() - this.greenAt;
     }
     return { observation: (this.obs = this.publish(phase)), reward: 0, done: this.isDone };
   }
@@ -91,7 +105,9 @@ export class ReactionTimeEnv implements GameEnv<ReactionTimeObservation, Reactio
       case 'early':
         return this.startRound();
       case 'green': {
-        const time = this.elapsed;
+        // Reaction = press time − green time, both wall-clock stamps.
+        const at = action.at ?? performance.now();
+        const time = Math.max(0, Math.round(at - this.greenAt));
         this.times.push(time);
         this.lastTime = time;
         this.elapsed = 0;

@@ -129,6 +129,7 @@ h3 {
 
 .rt-surface {
   flex: 1;
+  touch-action: manipulation; /* no double-tap zoom delay on touch */
   /* span the full card width: walls land on the card's borders */
   width: calc(100% + 40px);
   margin-inline: -20px;
