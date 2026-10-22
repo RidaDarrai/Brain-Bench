@@ -80,12 +80,15 @@ export default function VisualMemoryGame({ startLevel, onComplete }: GameProps) 
         {Array.from({ length: obs.gridSize * obs.gridSize }, (_, cell) => {
           const isTile = obs.tiles.includes(cell);
           const lit = isRevealing && isTile;
-          const pickedNow = obs.picked.includes(cell);
+          // HB's board (Y3): the player's picks show during your turn and the
+          // recap; the board blanks out again for preflip/postrecap.
+          const showPicked = obs.phase === 'input' || obs.phase === 'recap';
+          const pickedNow = showPicked && obs.picked.includes(cell);
           const wrong = pickedNow && !isTile;
           return (
             <button
               key={cell}
-              className={`vis-cell${lit ? ' lit' : ''}${pickedNow && isTile ? ' selected flip' : ''}${
+              className={`vis-cell${lit ? ' lit' : ''}${pickedNow && isTile ? ' selected' : ''}${
                 wrong ? ' wrong' : ''
               }`}
               onPointerDown={(e) => {
