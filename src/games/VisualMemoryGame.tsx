@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { VisualMemoryEnv } from '../core/visualMemory';
+import { pitchRatio, playSound } from '../sound';
 import GameOverlay from './GameOverlay';
 import { levelsBetween, useEnv } from './useEnv';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,14 @@ export default function VisualMemoryGame({ startLevel, onComplete }: GameProps) 
   // Fresh round → clear the red marks.
   useEffect(() => {
     if (obs.phase === 'show') setWrongCells(new Set());
+  }, [obs.phase]);
+
+  // Human Benchmark sounds: reveal when the tiles light, "go" when it's
+  // your turn, victory on a cleared level.
+  useEffect(() => {
+    if (obs.phase === 'show') playSound('reveal', { volume: 0.2 });
+    else if (obs.phase === 'input') playSound('go', { volume: 0.2 });
+    else if (obs.phase === 'feedback') playSound('victory', { volume: 0.25 });
   }, [obs.phase]);
 
   const finish = useCallback(
@@ -38,6 +47,13 @@ export default function VisualMemoryGame({ startLevel, onComplete }: GameProps) 
     if (obs.phase !== 'input') return;
     const pickingWrong = !obs.tiles.includes(cell) && !obs.selected.includes(cell);
     const clearingWrong = wrongCells.has(cell);
+    // HB boops: pitch rises with each correct pick; wrong picks get a low boop.
+    if (pickingWrong) playSound('boop', { pitch: pitchRatio(-3), volume: 0.2 });
+    else if (!clearingWrong && !obs.selected.includes(cell)) {
+      const correctSoFar =
+        obs.selected.filter((c) => obs.tiles.includes(c)).length + 1;
+      playSound('boop', { pitch: pitchRatio(correctSoFar - 1), volume: 0.2 });
+    }
     toggle(cell);
     if (pickingWrong) {
       setWrongCells((prev) => new Set(prev).add(cell));

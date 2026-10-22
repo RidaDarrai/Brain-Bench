@@ -32,6 +32,8 @@ const GRID_TILES = 9;
 const SHOW_ON_MS = 350;
 const SHOW_GAP_MS = 250;
 const SHOW_CYCLE = SHOW_ON_MS + SHOW_GAP_MS;
+/** Breathing room after a completed sequence, before the next one starts. */
+const ROUND_PAUSE_MS = 700;
 
 export class SequenceMemoryEnv
   implements GameEnv<SequenceMemoryObservation, SequenceMemoryAction>
@@ -42,6 +44,7 @@ export class SequenceMemoryEnv
   private finalScore: number | null = null;
   private sequence: number[] = [];
   private showElapsed = 0;
+  private pauseElapsed = 0;
   private inputIndex = 0;
 
   constructor(seed?: number) {
@@ -67,6 +70,7 @@ export class SequenceMemoryEnv
     this.finalScore = null;
     this.sequence = [randomInt(this.rng, GRID_TILES)];
     this.showElapsed = 0;
+    this.pauseElapsed = 0;
     this.inputIndex = 0;
     return { observation: (this.obs = this.publish('show')), reward: 0, done: false };
   }
@@ -74,6 +78,11 @@ export class SequenceMemoryEnv
   tick(dtMs: number): StepResult<SequenceMemoryObservation> {
     if (this.obs.phase !== 'show') {
       return { observation: this.obs, reward: 0, done: this.isDone };
+    }
+    if (this.pauseElapsed > 0) {
+      // Brief pause after a completed sequence: nothing lit yet.
+      this.pauseElapsed = Math.max(0, this.pauseElapsed - dtMs);
+      return { observation: this.publish('show'), reward: 0, done: false };
     }
     this.showElapsed += dtMs;
     const idx = Math.floor(this.showElapsed / SHOW_CYCLE);
@@ -101,9 +110,10 @@ export class SequenceMemoryEnv
     }
     this.inputIndex += 1;
     if (this.inputIndex >= this.sequence.length) {
-      // Round complete — extend the sequence and show it again.
+      // Round complete — extend the sequence, pause briefly, then show it again.
       this.sequence.push(randomInt(this.rng, GRID_TILES));
       this.showElapsed = 0;
+      this.pauseElapsed = ROUND_PAUSE_MS;
       this.inputIndex = 0;
       return { observation: (this.obs = this.publish('show')), reward: 1, done: false };
     }

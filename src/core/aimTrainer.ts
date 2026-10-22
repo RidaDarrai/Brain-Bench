@@ -90,6 +90,8 @@ export class AimTrainerEnv implements GameEnv<AimTrainerObservation, AimTrainerA
     if (action.type !== 'shoot' || this.isDone) {
       return { observation: this.obs, reward: 0, done: this.isDone };
     }
+    // Reject non-finite coordinates (NaN/Infinity must never count as a hit).
+    if (!Number.isFinite(action.x) || !Number.isFinite(action.y)) return this.noop();
     const t = this.target;
     if (!t) return this.noop();
     const dx = action.x - t.x;

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AimTrainerEnv, type AimTrainerObservation } from '../core/aimTrainer';
 import { formatScore, TESTS } from '../core/tests';
+import { playSound } from '../sound';
 import GameOverlay from './GameOverlay';
 import { useEnv } from './useEnv';
 import type { GameProps } from './types';
@@ -70,8 +71,20 @@ export default function AimTrainerGame({ startLevel, onComplete }: GameProps) {
     const rect = fieldRef.current?.getBoundingClientRect();
     if (!rect) return;
     const { x, y } = toVirtual(e, rect);
+    // HB: a low blip when you hit the backdrop instead of the target.
+    const target = obs.target;
+    if (target && Math.hypot(x - target.x, y - target.y) > obs.radius) {
+      playSound('blipLow', { volume: 0.2 });
+    }
     act({ type: 'shoot', x, y });
   };
+
+  // HB: a high blip each time a new target spawns (i.e. each hit).
+  const prevHits = useRef(0);
+  useEffect(() => {
+    if (obs.hitCount > prevHits.current) playSound('blipHigh', { volume: 0.2 });
+    prevHits.current = obs.hitCount;
+  }, [obs.hitCount]);
 
   // Auto-open the overlay once the run ends.
   const [overlay, setOverlay] = useState(false);

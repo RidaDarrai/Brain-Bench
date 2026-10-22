@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { Terminal } from 'lucide-react';
 import { cn } from 'cn';
 import ThemeToggle from './ThemeToggle';
+import SoundToggle from './SoundToggle';
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
   return cn(
@@ -33,6 +34,7 @@ export default function Layout() {
             <NavLink to="/progress" className={navLinkClass}>
               Progress
             </NavLink>
+            <SoundToggle />
             <ThemeToggle />
           </nav>
         </div>

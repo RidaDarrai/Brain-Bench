@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SequenceMemoryEnv } from '../core/sequenceMemory';
+import { pitchRatio, playSound, SEQUENCE_TILE_STEP } from '../sound';
 import GameOverlay from './GameOverlay';
 import { useEnv } from './useEnv';
 import type { GameProps } from './types';
@@ -19,18 +20,49 @@ export default function SequenceMemoryGame({ onComplete }: GameProps) {
   }, [obs.phase]);
   useEffect(() => () => window.clearTimeout(flashTimer.current), []);
 
-  // Sequence completed → the box washes white for an instant.
+  // Sequence completed → the card pulses with light (Human Benchmark style:
+  // the background itself brightens and returns, 0.5s linear).
   const prevLevel = useRef(obs.level);
   const [levelFlash, setLevelFlash] = useState(false);
   useEffect(() => {
     if (obs.level <= prevLevel.current) return;
     prevLevel.current = obs.level;
     setLevelFlash(true);
-    const t = window.setTimeout(() => setLevelFlash(false), 320);
+    const t = window.setTimeout(() => setLevelFlash(false), 500);
     return () => window.clearTimeout(t);
   }, [obs.level]);
 
   const press = useCallback((tile: number) => act({ type: 'press', tile }), [act]);
+
+  // Human Benchmark sounds: a pitched boop as each tile lights during
+  // playback, the same boop on every correct press (each tile has a note
+  // on a major scale), and a low boop when the run ends.
+  const tileBoop = (tile: number, volume: number) =>
+    playSound('boop', { pitch: pitchRatio(SEQUENCE_TILE_STEP[tile]), volume });
+  useEffect(() => {
+    if (obs.phase === 'show' && obs.showActive && obs.showIndex >= 0) {
+      tileBoop(obs.sequence[obs.showIndex], 0.2);
+    }
+  }, [obs.phase, obs.showActive, obs.showIndex]);
+  const prevInput = useRef(0);
+  const prevPhase = useRef(obs.phase);
+  useEffect(() => {
+    if (obs.phase === 'input' && obs.inputIndex > prevInput.current) {
+      tileBoop(obs.sequence[obs.inputIndex - 1], 0.2);
+    }
+    // The final correct press completes the round in the same step:
+    // inputIndex resets to 0 and the phase flips straight to 'show' — so
+    // the check above never fires for it. Play that last tile here.
+    if (obs.phase === 'show' && prevPhase.current === 'input') {
+      tileBoop(obs.sequence[prevInput.current], 0.2);
+    }
+    prevInput.current = obs.inputIndex;
+    prevPhase.current = obs.phase;
+  }, [obs.inputIndex, obs.phase, obs.sequence]);
+  useEffect(() => {
+    if (obs.phase === 'done') playSound('boop', { pitch: pitchRatio(-4), volume: 0.25 });
+  }, [obs.phase]);
+
   const finish = () => {
     if (reported.current) return;
     reported.current = true;

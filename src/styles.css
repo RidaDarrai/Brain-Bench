@@ -103,26 +103,6 @@ h3 {
   font-weight: 700;
 }
 
-/* Level complete: the box washes white for an instant (Human Benchmark style). */
-@keyframes level-flash {
-  from {
-    opacity: 0.32;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-.game.level-flash::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: #fff;
-  pointer-events: none;
-  animation: level-flash 0.3s ease-out forwards;
-}
-
 /* ---------- Game over overlay ---------- */
 .game-overlay {
   position: absolute;
@@ -203,23 +183,66 @@ h3 {
 }
 
 /* ---------- Sequence memory ---------- */
+
+/* Level complete: the card itself pulses with light — its background
+   brightens toward light blue and returns. Human Benchmark does exactly
+   this (no overlay: the card IS the light). Linear 0.5s = 250ms in,
+   250ms out. */
+@keyframes seq-complete-flash {
+  0% {
+    background-color: var(--flash-base);
+  }
+  50% {
+    background-color: var(--flash-lit);
+  }
+  100% {
+    background-color: var(--flash-base);
+  }
+}
+
+.game-sequence {
+  --flash-base: var(--bg-raised);
+  --flash-lit: #26495b; /* fallback: dark card lifts toward blue */
+  --flash-lit: color-mix(in oklab, var(--bg-raised) 72%, #4fc3ff);
+}
+
+.game-sequence.level-flash {
+  animation: seq-complete-flash 0.5s linear;
+}
+
+/* Reduced motion: the global kill-switch collapses every animation, which
+   would erase this cue completely. Kept as an exception — it's a pure light
+   pulse (no movement, one flash) and matches Human Benchmark. */
+@media (prefers-reduced-motion: reduce) {
+  .game-sequence.level-flash {
+    animation-duration: 0.5s !important;
+  }
+}
+
 .seq-grid {
   display: grid;
-  grid-template-columns: repeat(3, 84px);
-  gap: 12px;
+  /* Human Benchmark's exact tile math (Kte() in their bundle):
+     size = min(400, innerWidth - 50) / 3 - 1  →  ≈132px tiles on desktop.
+     CSS can't floor(); the sub-pixel remainder is imperceptible. No gap:
+     the seams come from the in-box border, like HB. */
+  --seq-tile-size: calc((min(400px, 100vw - 50px) / 3) - 1px);
+  grid-template-columns: repeat(3, var(--seq-tile-size));
 }
 
 .seq-tile {
-  width: 84px;
-  height: 84px;
-  border-radius: 12px;
-  border: 1px solid var(--edge);
+  width: var(--seq-tile-size);
+  height: var(--seq-tile-size);
+  border-radius: calc(var(--seq-tile-size) / 8);
+  /* HB: transparent in-box border (size/16 ≈ 8.3px) creates the seams
+     between fills; the fill stops at the padding box. */
+  border: calc(var(--seq-tile-size) / 16) solid transparent;
   background: #232b38;
+  background-clip: padding-box;
   cursor: pointer;
   touch-action: manipulation;
-  transition:
-    background 0.25s ease,
-    transform 0.12s ease; /* fade-back after a press is released */
+  transition: background 0.25s ease; /* fade-back after a press is released */
+  /* No scaling anywhere (Human Benchmark tiles never change size —
+     feedback is pure color). */
 }
 
 .seq-tile:disabled {
@@ -228,21 +251,13 @@ h3 {
 
 .seq-tile.lit {
   background: #f0c547;
-  border-color: #f0c547;
-  transform: scale(1.05);
-  transition:
-    background 0.1s,
-    transform 0.06s; /* playback flashes snap on/off as before */
+  transition: background 0.1s; /* playback flashes snap on/off as before */
 }
 
 /* Input press: snaps on while held… */
 .seq-tile.pressed {
   background: #f0c547;
-  border-color: #f0c547;
-  transform: scale(1.05);
-  transition:
-    background 0.05s,
-    transform 0.06s;
+  transition: background 0.05s;
 }
 /* …and fades back via the base rule's 0.25s once released. */
 
@@ -568,14 +583,5 @@ h3 {
   .rt-surface {
     width: calc(100% + 28px);
     margin-inline: -14px;
-  }
-
-  .seq-grid {
-    grid-template-columns: repeat(3, 72px);
-  }
-
-  .seq-tile {
-    width: 72px;
-    height: 72px;
   }
 }
