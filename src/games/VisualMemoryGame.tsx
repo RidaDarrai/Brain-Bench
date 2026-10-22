@@ -1,30 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { VisualMemoryEnv } from '../core/visualMemory';
+import { useCallback, useEffect, useRef } from 'react';
+import { Heart } from 'lucide-react';
+import { LIVES, VisualMemoryEnv } from '../core/visualMemory';
 import { pitchRatio, playSound } from '../sound';
 import GameOverlay from './GameOverlay';
 import { levelsBetween, useEnv } from './useEnv';
-import { Button } from '@/components/ui/button';
 import type { GameProps } from './types';
 
 export default function VisualMemoryGame({ startLevel, onComplete }: GameProps) {
   const { obs, act } = useEnv(() => new VisualMemoryEnv(startLevel));
   const reported = useRef(false);
 
-  // Cells picked wrongly this round: shake first, then stay red.
-  const [wrongCells, setWrongCells] = useState<Set<number>>(new Set());
-
-  // Fresh round → clear the red marks.
+  // Human Benchmark sounds: reveal when the tiles flash, "go" on your turn,
+  // victory on a cleared level, low boop when a life is lost.
   useEffect(() => {
-    if (obs.phase === 'show') setWrongCells(new Set());
-  }, [obs.phase]);
-
-  // Human Benchmark sounds: reveal when the tiles light, "go" when it's
-  // your turn, victory on a cleared level.
-  useEffect(() => {
-    if (obs.phase === 'show') playSound('reveal', { volume: 0.2 });
+    if (obs.phase === 'reveal') playSound('reveal', { volume: 0.2 });
     else if (obs.phase === 'input') playSound('go', { volume: 0.2 });
-    else if (obs.phase === 'feedback') playSound('victory', { volume: 0.25 });
-  }, [obs.phase]);
+    else if (obs.phase === 'recap') {
+      if (obs.lastCorrect) playSound('victory', { volume: 0.25 });
+      else playSound('boop', { pitch: pitchRatio(-4), volume: 0.25 });
+    }
+  }, [obs.phase, obs.lastCorrect]);
 
   const finish = useCallback(
     (cleared: number[]) => {
@@ -36,68 +31,71 @@ export default function VisualMemoryGame({ startLevel, onComplete }: GameProps) 
   );
   const cleared = levelsBetween(startLevel, obs.score ?? 0);
 
-  const isShowing = obs.phase === 'show';
-  const totalShowMs = 900 + 300 * obs.tiles.length;
-
-  const toggle = (cell: number) => act({ type: 'select', cell });
-  const submit = () => act({ type: 'submit' });
-
-  // Toggle selection and remember wrong picks so they can zigzag → red.
-  const onCell = (cell: number) => {
-    if (obs.phase !== 'input') return;
-    const pickingWrong = !obs.tiles.includes(cell) && !obs.selected.includes(cell);
-    const clearingWrong = wrongCells.has(cell);
-    // HB boops: pitch rises with each correct pick; wrong picks get a low boop.
-    if (pickingWrong) playSound('boop', { pitch: pitchRatio(-3), volume: 0.2 });
-    else if (!clearingWrong && !obs.selected.includes(cell)) {
-      const correctSoFar =
-        obs.selected.filter((c) => obs.tiles.includes(c)).length + 1;
+  // Picks lock in (HB: no undo, no submit — the level auto-completes when the
+  // board exactly matches). Clicks are on pointerdown for instant response.
+  const pick = (cell: number) => {
+    if (obs.phase !== 'input' || obs.picked.includes(cell)) return;
+    // HB boops: pitch rises with each correct pick; wrong picks get a low one.
+    if (obs.tiles.includes(cell)) {
+      const correctSoFar = obs.picked.filter((c) => obs.tiles.includes(c)).length + 1;
       playSound('boop', { pitch: pitchRatio(correctSoFar - 1), volume: 0.2 });
+    } else {
+      playSound('boop', { pitch: pitchRatio(-3), volume: 0.2 });
     }
-    toggle(cell);
-    if (pickingWrong) {
-      setWrongCells((prev) => new Set(prev).add(cell));
-    } else if (clearingWrong) {
-      setWrongCells((prev) => {
-        const next = new Set(prev);
-        next.delete(cell);
-        return next;
-      });
-    }
+    act({ type: 'pick', cell });
   };
 
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      if (obs.phase === 'input') submit();
-      else if (obs.phase === 'feedback') act({ type: 'continue' });
-    }
-  };
+  const isRevealing = obs.phase === 'reveal';
+  const flashing = obs.phase === 'recap';
+  // During a lost-level recap, HB dims the heart being lost right away.
+  const losing = !obs.lastCorrect && (obs.phase === 'recap' || obs.phase === 'postrecap');
+  const displayLives = obs.lives - (losing ? 1 : 0);
 
   return (
-    <div className="game game-visual" onKeyDown={onKey} tabIndex={-1}>
+    <div
+      className={`game game-visual${flashing ? (obs.lastCorrect ? ' recap-flash' : ' recap-flash loss') : ''}`}
+    >
       <div className="game-status">
-        <span className="muted">Level {obs.level}</span>
-        <span className="muted"> · {obs.tiles.length} squares</span>
+        <span className="muted">
+          {isRevealing ? 'Watch carefully… · ' : obs.phase === 'input' ? 'Your turn · ' : ''}
+          Level {obs.level}
+        </span>
+        <span className="vis-hearts" aria-label={`${displayLives} of ${LIVES} lives`}>
+          {Array.from({ length: LIVES }, (_, i) => (
+            <Heart
+              key={i}
+              className={`vis-heart${i < displayLives ? ' on' : ''}`}
+              aria-hidden="true"
+            />
+          ))}
+        </span>
       </div>
 
       <div
         className="vis-grid"
-        style={{ gridTemplateColumns: `repeat(${obs.gridSize}, 1fr)` }}
+        style={{ '--vis-cols': obs.gridSize } as React.CSSProperties}
         role="grid"
         aria-label="Memory grid"
       >
         {Array.from({ length: obs.gridSize * obs.gridSize }, (_, cell) => {
-          const lit = isShowing && obs.tiles.includes(cell);
-          const selected = !isShowing && obs.selected.includes(cell);
-          const revealed = obs.phase === 'done' && obs.tiles.includes(cell);
-          const wrong = wrongCells.has(cell);
+          const isTile = obs.tiles.includes(cell);
+          const lit = isRevealing && isTile;
+          const pickedNow = obs.picked.includes(cell);
+          const wrong = pickedNow && !isTile;
           return (
             <button
               key={cell}
-              className={`vis-cell${lit ? ' lit' : ''}${selected ? ' selected' : ''}${
-                selected && !wrong ? ' flip' : ''
-              }${wrong ? ' wrong' : ''}${revealed ? ' revealed' : ''}`}
-              onClick={() => onCell(cell)}
+              className={`vis-cell${lit ? ' lit' : ''}${pickedNow && isTile ? ' selected flip' : ''}${
+                wrong ? ' wrong' : ''
+              }`}
+              onPointerDown={(e) => {
+                if (e.button !== 0) return;
+                pick(cell);
+              }}
+              // Keyboard activation (Enter/Space) has no pointerdown.
+              onClick={(e) => {
+                if (e.detail === 0) pick(cell);
+              }}
               disabled={obs.phase !== 'input'}
               aria-label={`Cell ${cell + 1}`}
             />
@@ -105,44 +103,17 @@ export default function VisualMemoryGame({ startLevel, onComplete }: GameProps) 
         })}
       </div>
 
-      {isShowing && (
-        <div className="vis-timer" aria-hidden="true">
-          <div
-            className="vis-timer-fill"
-            style={{ width: `${Math.min(100, (obs.showRemaining / totalShowMs) * 100)}%` }}
-          />
-        </div>
-      )}
-
-      {obs.phase === 'input' && (
-        <div className="game-actions">
-          <span className="muted">
-            {obs.selected.length} / {obs.tiles.length} selected
-          </span>
-          <Button onClick={submit} disabled={obs.selected.length === 0}>
-            Submit
-          </Button>
-        </div>
-      )}
-
-      {obs.phase === 'feedback' && (
-        <div className="game-actions">
-          <span className="correct-text">✓ Correct!</span>
-          <Button onClick={() => act({ type: 'continue' })} autoFocus>
-            Next level
-          </Button>
-        </div>
-      )}
-
-      {obs.phase === 'done' && (
+      {obs.phase === 'gameover' && (
         <GameOverlay
           accent="bad"
-          title="Wrong pattern"
+          title="Out of lives"
           message={
             <>
-              The lit squares are shown in <strong>green</strong>.
-              <br />
-              You passed {obs.score ?? 0} {obs.score === 1 ? 'level' : 'levels'}
+              You reached level {obs.level} and passed{' '}
+              <strong>
+                {obs.score ?? 0} {obs.score === 1 ? 'level' : 'levels'}
+              </strong>
+              .
             </>
           }
           onContinue={() => finish(cleared)}

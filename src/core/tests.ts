@@ -87,16 +87,16 @@ export const TESTS: Record<TestId, TestMeta> = {
     icon: 'eye',
     tagline: 'Remember a pattern of squares.',
     description:
-      'Squares light up on a grid — memorize which ones, then select them. The grid and the number of squares grow with each level.',
+      'Every level, a number of tiles will flash on the grid. Memorize them and pick them again — levels get progressively harder, and you have three lives.',
     hasLevels: true,
     maxLevel: 30,
     lowerIsBetter: false,
     defaultStartLevel: 1,
     instructions: [
-      'Some squares on the grid will light up briefly.',
-      'Memorize their positions.',
-      'Click every lit square, then press Submit.',
-      'Pass a level to unlock the next one (bigger grids, more squares).',
+      'Tiles flash on the grid — memorize them before they reset.',
+      'Pick the tiles again. Picks lock in — there is no undo.',
+      'Finish the exact pattern to pass the level.',
+      'Miss 3 tiles on a level and you lose a life. You have three lives.',
     ],
   },
   'chimp-test': {
