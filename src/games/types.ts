@@ -6,8 +6,8 @@ export interface GameResult {
   cleared: number[];
   /**
    * Whether this score is eligible as a personal best (default true).
-   * False e.g. for a timed-out Aim Trainer run, whose partial average
-   * would otherwise beat legitimate completed runs.
+   * False for runs that end without a legitimate final score (e.g. a
+   * partial average), which would otherwise beat completed runs.
    */
   validForBest?: boolean;
 }

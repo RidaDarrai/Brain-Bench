@@ -124,16 +124,17 @@ export const TESTS: Record<TestId, TestMeta> = {
     icon: 'target',
     tagline: 'How fast can you hit all the targets?',
     description:
-      'Click the targets as quickly as you can. Levels add targets, shrink them, and eventually add a time limit.',
+      "Click the targets as quickly and accurately as you can. This tests reflexes and hand-eye coordination. Once you've clicked 30 targets, your score and average time per target will be displayed.",
     hasLevels: true,
     maxLevel: 15,
     lowerIsBetter: true,
     defaultStartLevel: 1,
     instructions: [
-      'A target appears — click it as fast as you can.',
-      'Hit every target to pass the level.',
-      'Later levels: more targets, smaller targets, and a time limit.',
+      'Click the target above to begin.',
+      'Hit 30 targets as quickly as you can.',
+      'Misses only play a low blip — they never cost you time.',
       'Your score is the average time per target (lower is better).',
+      'Deeper levels shrink the targets — clear one to unlock the next.',
     ],
   },
 };

@@ -2,14 +2,20 @@ import { createRng, type Rng } from './rng';
 import type { GameEnv, StepResult } from './types';
 
 /**
- * Aim Trainer — leveled. Click targets as fast as possible.
- * Levels add more targets, shrink them, and (later) impose a time limit.
- * Score = average ms per target (lower is better).
+ * Aim Trainer — Human Benchmark parity (HB reducer `lX`):
+ *  - fixed 970x500 field, one bullseye at a time, 30 counted targets
+ *  - intro: a centered target sits under HB's "Click the target above to
+ *    begin."; its timing is never recorded (HB excludes results[0] from the
+ *    average: `uX(e)/(e.results.length-1)`)
+ *  - misses record nothing (HB `clickedBackdrop` only plays a low blip)
+ *  - score = mean ms of the 30 counted hits (HB `Hw`)
+ *  - spawn: x in [S, 970-S], y in [S, 500-S] with S = target size (HB `$t`)
  *
- * Coordinates live in a fixed 1000x1000 virtual space so the environment is
- * independent of the viewport; the UI maps pixels <-> virtual units.
+ * Our unlock knob: level scales the target size (L1 = HB's exact 100px).
+ * Timing is tick-driven — no timers, no Date.now — so episodes are
+ * reproducible for RL/debugging.
  */
-export type AimTrainerPhase = 'play' | 'done';
+export type AimTrainerPhase = 'intro' | 'play' | 'done';
 
 export interface AimTarget {
   x: number;
@@ -20,21 +26,29 @@ export interface AimTrainerObservation {
   phase: AimTrainerPhase;
   level: number;
   target: AimTarget | null;
-  radius: number;
+  /** Target diameter in field units (HB `$t`). */
+  size: number;
   hitCount: number;
   totalTargets: number;
-  /** ms elapsed in the current attempt. */
-  elapsed: number;
-  /** ms limit for this level (null = untimed). */
-  timeLimit: number | null;
-  /** true = all targets hit in time, false = ran out of time (only when done). */
+  /** true on done — the run always completes (HB has no fail state). */
   completed: boolean | null;
   score: number | null;
 }
 
 export type AimTrainerAction = { type: 'shoot'; x: number; y: number };
 
-const SPACE = 1000;
+export const FIELD_W = 970; // HB BT
+export const FIELD_H = 500; // HB HT
+export const TOTAL_TARGETS = 30; // HB Dh
+
+const START_SIZE = 100; // HB $t
+const SIZE_STEP = 5;
+const MIN_SIZE = 30;
+
+/** Level knob: L1 is HB's exact target size; deeper levels shrink it. */
+export function targetSizeForLevel(level: number): number {
+  return Math.max(MIN_SIZE, START_SIZE - (Math.max(1, Math.floor(level)) - 1) * SIZE_STEP);
+}
 
 export class AimTrainerEnv implements GameEnv<AimTrainerObservation, AimTrainerAction> {
   private rng: Rng;
@@ -42,12 +56,17 @@ export class AimTrainerEnv implements GameEnv<AimTrainerObservation, AimTrainerA
   private isDone = false;
   private finalScore: number | null = null;
   private level: number;
+  private phase: AimTrainerPhase = 'intro';
   private target: AimTarget | null = null;
-  private radius = 40;
+  private size = START_SIZE;
   private hitCount = 0;
-  private totalTargets = 10;
+  private completed: boolean | null = null;
+  /** ms clock; advances only while playing, only via tick. */
   private elapsed = 0;
-  private timeLimit: number | null = null;
+  /** elapsed reading at the current target's spawn. */
+  private spawnAt = 0;
+  /** per-target ms of the COUNTED hits (never the opener). */
+  private durations: number[] = [];
 
   /** @param startLevel level to begin at (for practicing unlocked levels). */
   constructor(startLevel = 1, seed?: number) {
@@ -69,89 +88,95 @@ export class AimTrainerEnv implements GameEnv<AimTrainerObservation, AimTrainerA
   }
 
   reset(): StepResult<AimTrainerObservation> {
-    this.isDone = false;
-    this.finalScore = null;
     this.configure();
     return { observation: this.obs, reward: 0, done: false };
   }
 
+  /** Timing only — nothing observable changes, so the obs identity is stable. */
   tick(dtMs: number): StepResult<AimTrainerObservation> {
     if (this.isDone) return { observation: this.obs, reward: 0, done: true };
-    this.elapsed += dtMs;
-    if (this.timeLimit !== null && this.elapsed >= this.timeLimit) {
-      this.elapsed = this.timeLimit;
-      this.finish(false);
-      return { observation: this.obs, reward: -1, done: true };
-    }
-    return { observation: (this.obs = this.publish('play')), reward: 0, done: false };
+    if (this.phase === 'play') this.elapsed += dtMs;
+    return { observation: this.obs, reward: 0, done: false };
   }
 
   step(action: AimTrainerAction): StepResult<AimTrainerObservation> {
-    if (action.type !== 'shoot' || this.isDone) {
-      return { observation: this.obs, reward: 0, done: this.isDone };
-    }
+    if (action.type !== 'shoot' || this.isDone) return this.noop();
     // Reject non-finite coordinates (NaN/Infinity must never count as a hit).
     if (!Number.isFinite(action.x) || !Number.isFinite(action.y)) return this.noop();
     const t = this.target;
     if (!t) return this.noop();
+    const r = this.size / 2;
     const dx = action.x - t.x;
     const dy = action.y - t.y;
-    if (dx * dx + dy * dy > this.radius * this.radius) {
-      // Miss — small penalty, target stays.
-      return { observation: this.obs, reward: -0.1, done: false };
+    if (dx * dx + dy * dy > r * r) {
+      // HB clickedBackdrop: record nothing, change nothing (the UI blips).
+      return { observation: this.obs, reward: 0, done: false };
     }
+    if (this.phase === 'intro') {
+      // Opener: starts the run and spawns the first counted target. HB records
+      // this click as results[0] and excludes it from the average — we simply
+      // never record it.
+      this.phase = 'play';
+      this.elapsed = 0;
+      this.spawn();
+      return { observation: (this.obs = this.publish()), reward: 0, done: false };
+    }
+    this.durations.push(Math.max(0, this.elapsed - this.spawnAt));
     this.hitCount += 1;
-    if (this.hitCount >= this.totalTargets) {
-      this.finish(true);
+    if (this.hitCount >= TOTAL_TARGETS) {
+      this.finish();
       return { observation: this.obs, reward: 1 + this.level, done: true };
     }
     this.spawn();
-    return { observation: (this.obs = this.publish('play')), reward: 1, done: false };
+    return { observation: (this.obs = this.publish()), reward: 1, done: false };
   }
 
   private noop(): StepResult<AimTrainerObservation> {
     return { observation: this.obs, reward: 0, done: this.isDone };
   }
 
-  private finish(completed: boolean): void {
-    const denominator = completed ? this.totalTargets : Math.max(1, this.hitCount);
-    this.finalScore = this.elapsed / denominator;
+  private finish(): void {
+    const sum = this.durations.reduce((a, b) => a + b, 0);
+    this.finalScore = sum / Math.max(1, this.durations.length); // HB Hw
+    this.phase = 'done';
+    this.completed = true;
     this.target = null;
     this.isDone = true;
-    this.obs = this.publish('done', completed);
-  }
-
-  private configure(): void {
-    this.totalTargets = Math.min(40, 10 + this.level * 2);
-    this.radius = Math.max(18, 50 - this.level * 2.5);
-    // Levels 1-4 are untimed; later levels add pressure.
-    this.timeLimit =
-      this.level < 5 ? null : this.totalTargets * Math.max(300, 700 - (this.level - 5) * 30);
-    this.hitCount = 0;
-    this.elapsed = 0;
-    this.spawn();
-    this.obs = this.publish('play');
+    this.obs = this.publish();
   }
 
   private spawn(): void {
-    const r = this.radius;
+    const s = this.size;
     this.target = {
-      x: r + this.rng() * (SPACE - 2 * r),
-      y: r + this.rng() * (SPACE - 2 * r),
+      x: this.rng() * (FIELD_W - 2 * s) + s, // HB: Math.random()*(BT-2*$t)+$t
+      y: this.rng() * (FIELD_H - 2 * s) + s,
     };
+    this.spawnAt = this.elapsed;
   }
 
-  private publish(phase: AimTrainerPhase, completed: boolean | null = null): AimTrainerObservation {
+  private configure(): void {
+    this.isDone = false;
+    this.finalScore = null;
+    this.phase = 'intro';
+    this.size = targetSizeForLevel(this.level);
+    this.hitCount = 0;
+    this.completed = null;
+    this.elapsed = 0;
+    this.spawnAt = 0;
+    this.durations = [];
+    this.target = { x: FIELD_W / 2, y: FIELD_H / 2 }; // HB UT: BT/2, HT/2
+    this.obs = this.publish();
+  }
+
+  private publish(): AimTrainerObservation {
     this.obs = {
-      phase,
+      phase: this.phase,
       level: this.level,
       target: this.target ? { ...this.target } : null,
-      radius: this.radius,
+      size: this.size,
       hitCount: this.hitCount,
-      totalTargets: this.totalTargets,
-      elapsed: Math.round(this.elapsed),
-      timeLimit: this.timeLimit,
-      completed,
+      totalTargets: TOTAL_TARGETS,
+      completed: this.completed,
       score: this.isDone ? this.finalScore : null,
     };
     return this.obs;

@@ -647,7 +647,13 @@ html:not(.dark) .chimp-cell.hidden {
   }
 }
 
-/* ---------- Aim trainer ---------- */
+/* ---------- Aim trainer (HB parity: 970x500 field, one bullseye, 30 targets) ---------- */
+.aim-desktop {
+  display: none;
+  flex: 1;
+  width: 100%;
+}
+
 .aim-surface {
   position: relative;
   flex: 1;
@@ -664,46 +670,165 @@ html:not(.dark) .chimp-cell.hidden {
   justify-content: center;
 }
 
-/* Square play field (size set inline by ResizeObserver): the env's
-   1000x1000 space maps onto this box, so targets render as true circles
-   and clicks match hit-testing exactly. */
+/* HB's field is a fixed 970x500 box; the component fits that aspect into the
+   surface and maps clicks/targets through it, so circles stay circular. */
 .aim-field {
   position: relative;
   cursor: crosshair;
   flex: 0 0 auto;
 }
 
+/* HB Qu chip: "Remaining 30" — 28px, label at 0.6 opacity, 10px gap. */
+.aim-remaining {
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  z-index: 2;
+  font-size: 28px;
+  pointer-events: none;
+}
+
+.aim-remaining-label {
+  margin-right: 10px;
+  opacity: 0.6;
+}
+
+/* HB intro copy: title above the centered target, both lines below it.
+   Anchored to --aim-r (target radius, set on the surface) + a 20px gap, so
+   the type never collides with the bullseye at any level or window size —
+   HB's fixed 150px spacer only clears their fixed 970px field. */
+.aim-intro {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+}
+
+.aim-intro-head {
+  position: absolute;
+  left: 15px;
+  right: 15px;
+  top: calc(50% - var(--aim-r, 50px) - 20px);
+  transform: translateY(-100%);
+}
+
+.aim-intro-lines {
+  position: absolute;
+  left: 15px;
+  right: 15px;
+  top: calc(50% + var(--aim-r, 50px) + 20px);
+}
+
+/* HB target: translucent disc + 3 rings (33.3% / 66.7% / 100%) + cross bars,
+   popping in with HB's keyframes: 0.5 -> 1.05 -> 1 over 0.2s ease-out.
+   --aim-scale (field width / 970) keeps the 2px lines proportional. */
 .aim-target {
   position: absolute;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #7ab0ff, var(--brand) 70%);
-  box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.75),
-    0 4px 14px rgba(0, 0, 0, 0.5);
-  animation: target-pop 0.12s ease-out;
+  animation: aim-pop 0.2s ease-out;
 }
 
-@keyframes target-pop {
+@keyframes aim-pop {
   from {
-    transform: translate(-50%, -50%) scale(0.4);
+    transform: translate(-50%, -50%) scale(0.5, 0.5);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05, 1.05);
   }
   to {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -50%) scale(1, 1);
   }
 }
 
-.aim-hud-corner {
+.aim-disc {
   position: absolute;
-  top: 10px;
-  left: 12px;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-weight: 600;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
 }
 
-.aim-danger {
-  color: var(--red-bright);
+.aim-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  border: calc(2px * var(--aim-scale, 1)) solid var(--aim-ink, #fff);
+  border-radius: 50%;
+}
+
+.aim-cross {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--aim-ink, #fff);
+}
+
+.aim-cross-v {
+  width: calc(2px * var(--aim-scale, 1));
+  height: 100%;
+}
+
+.aim-cross-h {
+  width: 100%;
+  height: calc(2px * var(--aim-scale, 1));
+}
+
+/* Light theme: white rings would vanish on a light surface. */
+html:not(.dark) .aim-target {
+  --aim-ink: #16202c;
+}
+
+html:not(.dark) .aim-disc {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.anim-slide-fade-in {
+  animation: slide-fade-in 0.35s ease-out;
+}
+
+@keyframes slide-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aim-target,
+  .anim-slide-fade-in {
+    animation: none;
+  }
+}
+
+/* HB desktop-only warning (plain copy — typing/chimp reuse a "keyboard"
+   variant; aim uses this one), hidden at HB's 700px breakpoint. */
+.aim-warning {
+  background: #ffcc99;
+  color: #111;
+  padding: 10px;
+  border-radius: 10px;
+  max-width: 720px;
+  text-align: center;
+}
+
+.aim-warning p {
+  margin: 0;
+}
+
+@media (min-width: 700px) {
+  .aim-desktop {
+    display: flex;
+  }
+
+  .aim-warning {
+    display: none;
+  }
 }
 
 /* ---------- Responsive ---------- */
