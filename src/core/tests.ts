@@ -105,15 +105,16 @@ export const TESTS: Record<TestId, TestMeta> = {
     icon: 'brain',
     tagline: 'Are you smarter than a chimpanzee?',
     description:
-      'Numbers 1 to N appear on a grid. Click 1 and they all hide — then click the rest in order from memory. Beat a level to unlock a bigger one.',
+      'This is a test of working memory, made famous by a study that found that chimpanzees consistently outperform humans on this task. It gets increasingly difficult every turn, starting at 4 digits and adding one every turn — pass a level to unlock a bigger one.',
     hasLevels: true,
     maxLevel: 20,
     lowerIsBetter: false,
     defaultStartLevel: 4,
     instructions: [
-      'Numbers 1 to N are scattered on the grid.',
-      'Click 1 first — all the numbers will hide.',
-      'Now click 2, 3, 4… in ascending order from memory.',
+      'Click the squares in order according to their numbers.',
+      'The test will get progressively harder.',
+      'The numbers hide after your first click — the 4-number board stays visible.',
+      'Wrong square? You get a strike. Three strikes and the test is over.',
       'Pass a level to unlock the next (one more number each level).',
     ],
   },
@@ -155,5 +156,8 @@ export function formatScore(meta: TestMeta, score: number | null | undefined): s
   if (score === null || score === undefined) return '—';
   const rounded = meta.lowerIsBetter ? Math.round(score) : Math.floor(score);
   if (meta.lowerIsBetter) return `${rounded} ms`;
+  // Chimp's score is the digit count you reached (HB's displayScore on their
+  // score screen), not a level tally.
+  if (meta.id === 'chimp-test') return `${rounded} ${rounded === 1 ? 'number' : 'numbers'}`;
   return `${rounded} ${rounded === 1 ? 'level' : 'levels'}`;
 }

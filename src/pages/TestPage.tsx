@@ -221,10 +221,16 @@ export default function TestPage() {
 
   // ---------- RESULTS ----------
   const newLevelUnlocked = result && result.newlyUnlocked.length > 0;
-  // "Next level" resumes at the first level NOT yet passed: for memory games
-  // that's the level the player just failed (score = levels passed); for Aim
-  // Trainer (score in ms) it's simply the level after the one just passed.
-  const nextLevel = meta.lowerIsBetter ? attempt.level + 1 : (result?.score ?? 0) + 1;
+  // "Next level" resumes at the first level NOT yet passed: deepest cleared
+  // level + 1 (levels come from the cleared list because Chimp's score is a
+  // digit count, not a level tally); for Aim Trainer (score in ms) it's
+  // simply the level after the one just passed.
+  const clearedLevels = result?.cleared ?? [];
+  const nextLevel = meta.lowerIsBetter
+    ? attempt.level + 1
+    : clearedLevels.length > 0
+      ? Math.max(...clearedLevels) + 1
+      : (result?.score ?? 0) + 1;
   const canGoNext =
     meta.hasLevels && result && startLevelPassed && nextLevel <= maxLevel;
 
@@ -254,7 +260,8 @@ export default function TestPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             {meta.hasLevels ? (
               <>
-                You passed {result.score} {result.score === 1 ? 'level' : 'levels'}
+                You passed {clearedLevels.length}{' '}
+                {clearedLevels.length === 1 ? 'level' : 'levels'}
               </>
             ) : (
               <>You reached level {result.score}</>
