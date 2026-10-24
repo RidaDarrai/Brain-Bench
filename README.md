@@ -2,6 +2,8 @@
 
 Brain Bench is a small site with six cognitive tests you can take in the browser. It's modeled closely on Human Benchmark — same tests, same scoring — but it runs entirely on your own machine. No accounts, no leaderboards, no server. Your results just stay in your browser.
 
+**Live demo: [ridadarrai.github.io/Brain-Bench](https://ridadarrai.github.io/Brain-Bench/)**
+
 ![Brain Bench home page in the dark theme](docs/screenshots/home-dark.png)
 
 ## The tests
