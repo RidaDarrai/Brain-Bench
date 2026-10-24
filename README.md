@@ -1,48 +1,43 @@
 # Brain Bench
 
-A browser-based suite of cognitive tests inspired by Human Benchmark — but local-first:
+Brain Bench is a small site with six cognitive tests you can take in the browser. It's modeled closely on Human Benchmark — same tests, same scoring — but it runs entirely on your own machine. No accounts, no leaderboards, no server. Your results just stay in your browser.
 
-- **No accounts, no leaderboards.** Your progress lives in your browser's `localStorage`, with JSON export/import.
-- **Level progression** for Number Memory, Visual Memory, Chimp Test, and Aim Trainer: pass a level to unlock the next one.
-- **RL-ready architecture.** Every game's logic lives in `src/core/` as a pure TypeScript environment with a Gym-style API (`reset()` / `tick(dt)` / `step(action)`), independent of React and the DOM. In the future, reinforcement learning agents can drive the exact same environments (headless in Node, or bridged to Python).
+![Brain Bench home page in the dark theme](docs/screenshots/home-dark.png)
 
 ## The tests
 
-| Test | Levels | Measures |
-|------|--------|----------|
-| Reaction Time | – | Visual reflex speed (avg of 5 rounds, ms) |
-| Sequence Memory | – | Working memory (growing tile sequence) |
-| Number Memory | ✅ | Digit span (level N = N digits) |
-| Visual Memory | ✅ | Spatial recall (growing grids) |
-| Chimp Test | ✅ | Eidetic number recall under time pressure |
-| Aim Trainer | ✅ | Visuomotor speed & precision (Fitts's Law) |
+- **Reaction Time** — click the instant the box turns green.
+- **Sequence Memory** — watch the tiles flash and repeat the pattern. It adds one every round.
+- **Number Memory** — a number flashes on screen, then hides. Type back as much as you caught.
+- **Visual Memory** — some tiles light up on the grid. Find them again before you lose all three lives.
+- **Chimp Test** — click the numbers in order. They hide after your first click, and three strikes end the run.
+- **Aim Trainer** — thirty targets, one at a time. Your score is your average time per target.
 
-## Design
+![Reaction Time — waiting, then the click](docs/gifs/reaction.gif)
 
-Cyberpunk "neon terminal" UI built with **Tailwind CSS v4 + shadcn/ui** (Radix), in two themes:
+![Chimp Test — picking the numbers in order](docs/gifs/chimp.gif)
 
-- **Dark (default)** — deep-black surfaces, neon cyan brand, per-test accent colors (reaction lime, sequence amber, number cyan, visual violet, chimp green, aim magenta), faint scanlines and a rare glitch-headline effect.
-- **Light** — an "inverted phosphor" palette: paper background with darkened neon text variants (all ≥ 4.5:1).
+![Aim Trainer — hitting targets around the field](docs/gifs/aim.gif)
 
-Game play-fields stay instrument-dark in both themes. Fonts: Space Grotesk (UI) + JetBrains Mono (scores/HUD). All motion respects `prefers-reduced-motion`, focus-visible rings are keyboard-visible, and Lighthouse accessibility scores 100.
+![Sequence Memory waiting for your turn](docs/screenshots/sequence.png)
 
-## Development
+## Your progress
+
+The bigger tests work in levels: pass one and the next unlocks, and your best scores carry over between visits. Everything is saved in localStorage on your own machine. The Progress page has export and import buttons if you want to back your results up as a JSON file or move them to another computer.
+
+## The look and the sounds
+
+It's a cyberpunk neon theme — dark by default, with a light mode if you'd rather not stare into the void. Each test has its own accent color, and there's a small audio button in the header for silencing the blips. Text contrast is checked against WCAG AA in both themes, and the animations stand down automatically if your system asks for reduced motion.
+
+![The same home page in light mode](docs/screenshots/home-light.png)
+
+## Running it
 
 ```bash
 npm install
-npm run dev      # start dev server
-npm run build    # type-check + production build
+npm run dev
 ```
 
-## Project layout
+Open http://localhost:5173 and pick a test. `npm run build` type-checks everything and writes a production bundle to `dist/`.
 
-```
-src/
-├── core/        # Pure TS game environments (no React, no DOM) — RL-ready
-├── games/       # React components that render an env & map input to actions
-├── pages/       # Home, Test, Progress pages
-├── storage/     # localStorage progress + JSON export/import
-├── lib/         # Web-layer presentation maps (icons, per-test accents)
-├── components/  # Shared UI + shadcn/ui primitives (src/components/ui)
-└── index.css    # Design tokens (dark/light) + Tailwind entry
-```
+One thing worth knowing: it's React, TypeScript, and Vite on the front, with Tailwind and shadcn/ui for the interface. The interesting part is that each test's logic lives in `src/core/` as a plain TypeScript environment — no React, no timers, just ticks and a seeded random number generator. A run can be replayed exactly, which keeps the games testable and makes it easy to point a reinforcement-learning agent at them later.
